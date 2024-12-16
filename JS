@@ -1,0 +1,126 @@
+// Seletores de elementos DOM
+const modal = document.querySelector('.modal-container');
+const tbody = document.querySelector('tbody');
+const sNome = document.querySelector('#m-nome');
+const sFuncao = document.querySelector('#m-funcao');
+const sSalario = document.querySelector('#m-salario');
+const sCargaHoraria = document.querySelector('#m-carga-horaria'); // Novo seletor
+const btnSalvar = document.querySelector('#btnSalvar');
+const btnIncluir = document.querySelector('#new');
+
+let itens = [];
+let id = undefined;
+
+// Função para carregar itens do localStorage
+const getItensBD = () => JSON.parse(localStorage.getItem('dbfunc')) ?? [];
+
+// Função para salvar itens no localStorage
+const setItensBD = () => localStorage.setItem('dbfunc', JSON.stringify(itens));
+
+// Função para carregar a lista de funcionários
+function loadItens() {
+  itens = getItensBD();
+  tbody.innerHTML = ''; // Limpar a tabela antes de adicionar os itens
+  itens.forEach((item, index) => {
+    insertItem(item, index);
+  });
+}
+
+// Função para adicionar um item à tabela
+function insertItem(item, index) {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td>${item.nome}</td>
+    <td>${item.funcao}</td>
+    <td>R$ ${item.salario}</td>
+    <td>${item.cargaHoraria} horas</td> <!-- Novo campo de carga horária -->
+    <td class="acao">
+      <button onclick="editItem(${index})"><i class="bx bx-edit"></i></button>
+    </td>
+    <td class="acao">
+      <button onclick="deleteItem(${index})"><i class="bx bx-trash"></i></button>
+    </td>
+  `;
+  tbody.appendChild(tr);
+}
+
+// Função para abrir o modal de cadastro/edição
+function openModal(edit = false, index = 0) {
+  modal.classList.add('active');
+  
+  // Fechar o modal ao clicar fora dele
+  modal.addEventListener('click', e => {
+    if (e.target.className.indexOf('modal-container') !== -1) {
+      modal.classList.remove('active');
+    }
+  });
+
+  // Se for para editar, preencher os campos com os dados do item
+  if (edit) {
+    sNome.value = itens[index].nome;
+    sFuncao.value = itens[index].funcao;
+    sSalario.value = itens[index].salario;
+    sCargaHoraria.value = itens[index].cargaHoraria; // Preenchendo cargaHoraria
+    id = index;
+  } else {
+    // Se for novo item, limpar os campos
+    sNome.value = '';
+    sFuncao.value = '';
+    sSalario.value = '';
+    sCargaHoraria.value = ''; // Limpar campo de cargaHoraria
+  }
+}
+
+// Função para editar um item
+function editItem(index) {
+  openModal(true, index);
+}
+
+// Função para deletar um item
+function deleteItem(index) {
+  if (confirm("Tem certeza que deseja excluir este item?")) {
+    itens.splice(index, 1);
+    setItensBD();
+    loadItens();
+  }
+}
+
+// Função para salvar um item (novo ou editado)
+btnSalvar.addEventListener('click', e => {
+  e.preventDefault();
+
+  if (sNome.value === '' || sFuncao.value === '' || sSalario.value === '' || sCargaHoraria.value === '') {
+    alert("Todos os campos são obrigatórios.");
+    return;
+  }
+
+  // Se for para editar
+  if (id !== undefined) {
+    itens[id].nome = sNome.value;
+    itens[id].funcao = sFuncao.value;
+    itens[id].salario = sSalario.value;
+    itens[id].cargaHoraria = sCargaHoraria.value; // Atualizando cargaHoraria
+  } else {
+    // Se for um novo item
+    itens.push({
+      'nome': sNome.value,
+      'funcao': sFuncao.value,
+      'salario': sSalario.value,
+      'cargaHoraria': sCargaHoraria.value // Incluindo cargaHoraria
+    });
+  }
+
+  // Atualizar o localStorage e recarregar os itens
+  setItensBD();
+  modal.classList.remove('active');
+  loadItens();
+  id = undefined;
+});
+
+// Função para abrir o modal para incluir um novo item
+btnIncluir.addEventListener('click', () => {
+  openModal(false); // Chama o modal sem dados para incluir um novo item
+});
+
+// Carregar os itens ao iniciar
+loadItens();
